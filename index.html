@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#05060a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Brainstormer</title>
+<link rel="icon" href="icon-512.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.json">
+<style>
+  :root{
+    --bg:#05060a; --panel:#0d1017; --panel2:#131823; --line:#232b3a;
+    --ink:#e9eef7; --dim:#8d9ab0; --acc:#5eead4; --acc2:#22d3ee;
+    --warn:#fbbf24; --bad:#f87171; --good:#34d399;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    background:radial-gradient(1200px 600px at 50% -10%,#122033 0%,var(--bg) 55%) fixed;
+    color:var(--ink); font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    -webkit-text-size-adjust:100%; padding-bottom:env(safe-area-inset-bottom);
+  }
+  .wrap{max-width:760px; margin:0 auto; padding:14px 14px 90px}
+  header{display:flex; align-items:center; gap:10px; margin:6px 0 12px}
+  h1{font-size:22px; margin:0; letter-spacing:.3px}
+  h1 span{color:var(--acc)}
+  .badge{margin-left:auto; font-size:12px; color:var(--dim); border:1px solid var(--line);
+         padding:4px 9px; border-radius:999px; background:#0b0f16}
+  .tabs{display:flex; gap:6px; background:#0b0f16; border:1px solid var(--line);
+        padding:5px; border-radius:14px; position:sticky; top:0; z-index:20; backdrop-filter:blur(8px)}
+  .tab{flex:1; text-align:center; padding:11px 6px; border-radius:10px; font-weight:700;
+       font-size:14px; color:var(--dim); cursor:pointer; border:0; background:transparent}
+  .tab.on{background:var(--acc); color:#04211c}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:14px; margin:12px 0}
+  .mic{display:flex; align-items:center; justify-content:center; gap:12px; width:100%;
+       padding:20px; border-radius:16px; border:1px solid var(--line); background:var(--panel2);
+       color:var(--ink); font-size:19px; font-weight:800; cursor:pointer}
+  .mic .dot{width:16px;height:16px;border-radius:50%;background:var(--bad)}
+  .mic.on{background:#2a1116; border-color:#7f1d1d}
+  .mic.on .dot{animation:pulse 1s infinite}
+  @keyframes pulse{0%{transform:scale(1);opacity:1}50%{transform:scale(1.5);opacity:.5}100%{transform:scale(1);opacity:1}}
+  textarea,input,select{width:100%; background:#0a0e15; color:var(--ink); border:1px solid var(--line);
+       border-radius:12px; padding:13px; font-size:17px; font-family:inherit}
+  textarea{min-height:130px; resize:vertical; line-height:1.5}
+  textarea:focus,input:focus,select:focus{outline:2px solid var(--acc); outline-offset:1px}
+  .row{display:flex; gap:8px; flex-wrap:wrap}
+  .row>*{flex:1}
+  button{font-family:inherit}
+  .btn{padding:14px 16px; border-radius:12px; border:1px solid var(--line); background:var(--panel2);
+       color:var(--ink); font-size:16px; font-weight:700; cursor:pointer}
+  .btn:active{transform:scale(.985)}
+  .btn.pri{background:var(--acc); color:#04211c; border-color:var(--acc)}
+  .btn.ghost{background:transparent; color:var(--dim); font-weight:600}
+  .btn.sm{padding:9px 11px; font-size:13px; border-radius:10px}
+  .btn.bad{color:var(--bad); border-color:#4a1d1d}
+  .hint{color:var(--dim); font-size:13px; margin:8px 2px}
+  .live{color:var(--acc); font-size:14px; font-style:italic; min-height:20px; margin:8px 2px}
+  .item{border:1px solid var(--line); border-radius:12px; padding:11px 12px; margin:9px 0; background:#0a0e15}
+  .item .top{display:flex; gap:8px; align-items:center; font-size:12px; color:var(--dim); margin-bottom:5px}
+  .item .n{color:var(--acc); font-weight:800}
+  .item .acts{margin-left:auto; display:flex; gap:6px}
+  .item p{margin:0; white-space:pre-wrap; word-break:break-word}
+  .tag{font-size:11px; border:1px solid var(--line); color:var(--dim); border-radius:999px; padding:2px 8px}
+  .plan{background:#0a0e15; border:1px solid var(--line); border-radius:12px; padding:14px;
+        white-space:pre-wrap; word-break:break-word; font:14px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace}
+  .rendered h2{font-size:16px; color:var(--acc); margin:16px 0 6px; border-bottom:1px solid var(--line); padding-bottom:5px}
+  .rendered h1{font-size:20px; color:var(--ink)}
+  .rendered p,.rendered li{font-size:15px}
+  .rendered ul,.rendered ol{padding-left:20px}
+  .rendered .chk{list-style:none; margin-left:-16px}
+  .rendered code{background:#131a25; padding:1px 5px; border-radius:5px; font-size:13px}
+  .seg{display:flex; gap:6px; margin:10px 0}
+  .seg button{flex:1; padding:9px; border-radius:10px; border:1px solid var(--line);
+      background:var(--panel2); color:var(--dim); font-weight:700; font-size:14px}
+  .seg button.on{background:var(--acc); color:#04211c; border-color:var(--acc)}
+  .empty{color:var(--dim); text-align:center; padding:26px 10px; font-size:15px}
+  .hidden{display:none !important}
+  .toast{position:fixed; left:50%; transform:translateX(-50%); bottom:22px; background:var(--acc);
+         color:#04211c; font-weight:800; padding:11px 18px; border-radius:999px; z-index:99;
+         opacity:0; pointer-events:none; transition:opacity .2s}
+  .toast.on{opacity:1}
+  .warnbox{background:#2a2110; border:1px solid #6b4b12; color:var(--warn); padding:10px 12px;
+           border-radius:12px; font-size:13px; margin:10px 0}
+  .kv{display:flex; gap:8px; align-items:center; font-size:13px; color:var(--dim); margin:6px 2px}
+  .kv select{width:auto; padding:7px 9px; font-size:13px}
+  .count{color:var(--acc); font-weight:800}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>Brain<span>stormer</span></h1>
+    <div class="badge"><span id="count" class="count">0</span> thoughts</div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab on" data-view="capture">🎙 Talk</button>
+    <button class="tab" data-view="list">📋 Thoughts</button>
+    <button class="tab" data-view="plan">🧩 Plan</button>
+  </div>
+
+  <!-- ══════════════════ CAPTURE ══════════════════ -->
+  <section id="v-capture">
+    <div class="card">
+      <button id="mic" class="mic"><span class="dot"></span><span id="micLbl">Tap to talk</span></button>
+      <div class="live" id="live"></div>
+      <div class="kv">
+        <span>Language</span>
+        <select id="lang">
+          <option value="en-US">English (US)</option>
+          <option value="en-GB">English (UK)</option>
+          <option value="es-ES">Español</option>
+          <option value="fr-FR">Français</option>
+          <option value="de-DE">Deutsch</option>
+          <option value="pt-BR">Português (BR)</option>
+        </select>
+        <label class="kv" style="margin-left:auto">
+          <input type="checkbox" id="keepGoing" checked style="width:auto"> keep listening
+        </label>
+      </div>
+      <div class="warnbox hidden" id="noSpeech">
+        This browser has no speech engine — just tap the text box and use the <b>mic key</b> on your iPhone keyboard.
+      </div>
+
+      <textarea id="text" placeholder="Talk — or type. Every random thought that lands here can be submitted."></textarea>
+
+      <div class="row" style="margin-top:10px">
+        <button id="submit" class="btn pri" style="flex:2">Submit thought</button>
+        <button id="clearDraft" class="btn ghost">Clear</button>
+      </div>
+      <div class="hint" id="draftHint">Nothing typed yet. Submit with the button or ⌘/Ctrl+Enter.</div>
+    </div>
+
+    <div class="card">
+      <div class="kv" style="margin:0 0 8px">
+        <span>Everything is saved on this phone only. Nothing leaves the device.</span>
+      </div>
+      <div class="row">
+        <button id="goBuild" class="btn">🧩 Turn all of this into a plan</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════ LIST ══════════════════ -->
+  <section id="v-list" class="hidden">
+    <div class="card">
+      <input id="q" placeholder="Search thoughts…">
+      <div class="kv" style="margin:8px 2px">
+        <span id="listInfo"></span>
+        <button id="export" class="btn sm ghost" style="margin-left:auto">Export</button>
+        <button id="import" class="btn sm ghost">Import</button>
+        <button id="archiveAll" class="btn sm ghost">Archive all</button>
+        <button id="wipe" class="btn sm bad">Delete all</button>
+        <input type="file" id="importFile" accept="application/json" class="hidden">
+      </div>
+    </div>
+    <div id="items"></div>
+  </section>
+
+  <!-- ══════════════════ PLAN ══════════════════ -->
+  <section id="v-plan" class="hidden">
+    <div class="card">
+      <input id="projName" placeholder="Project name (optional) — used as the plan title">
+      <div class="row" style="margin-top:10px">
+        <button id="build" class="btn pri">Build / rebuild plan</button>
+      </div>
+      <div class="hint">Groups everything you said by what it is — features, fixes, look, data, rules, questions —
+        de-dupes the repeats, and writes it as a spec. Paste the agent version straight into a coding agent.</div>
+    </div>
+
+    <div class="card hidden" id="planCard">
+      <div class="row">
+        <button id="copyAgent" class="btn pri">📋 Copy for an agent</button>
+        <button id="copyPlan" class="btn">Copy plan</button>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button id="download" class="btn ghost">Download .md</button>
+        <button id="copyRaw" class="btn ghost">Copy raw thoughts</button>
+      </div>
+      <div class="seg" style="margin-top:12px">
+        <button class="on" data-fmt="rendered">Formatted</button>
+        <button data-fmt="plain">Plain text</button>
+      </div>
+      <div id="planOut" class="rendered"></div>
+      <textarea id="planPlain" class="plan hidden" readonly style="min-height:340px"></textarea>
+      <div class="hint" id="planStats"></div>
+    </div>
+
+    <div class="empty" id="planEmpty">No plan yet — talk for a while, then press <b>Build plan</b>.</div>
+  </section>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ───────────────────────────── storage ───────────────────────────── */
+var KEY = "brainstormer.v1";
+var S = load();
+function load(){
+  try{
+    var raw = localStorage.getItem(KEY);
+    var d = raw ? JSON.parse(raw) : null;
+    if(d && d.thoughts) return d;
+  }catch(e){}
+  return {v:1, thoughts:[], archived:[], name:"", draft:""};
+}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+
+/* ───────────────────────────── helpers ───────────────────────────── */
+var $ = function(id){ return document.getElementById(id); };
+function toast(msg){
+  var t = $("toast"); t.textContent = msg; t.classList.add("on");
+  clearTimeout(toast._t); toast._t = setTimeout(function(){ t.classList.remove("on"); }, 1600);
+}
+function esc(s){ return String(s).replace(/[&<>"]/g, function(c){
+  return ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"})[c]; }); }
+function hhmm(t){
+  var d = new Date(t);
+  return d.toLocaleDateString([], {month:"short", day:"numeric"}) + " " +
+         d.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+}
+function copy(text, label){
+  function done(){ toast(label || "Copied"); }
+  if(navigator.clipboard && window.isSecureContext){
+    navigator.clipboard.writeText(text).then(done, function(){ legacy(); });
+  } else { legacy(); }
+  function legacy(){
+    var ta = document.createElement("textarea");
+    ta.value = text; ta.style.position = "fixed"; ta.style.top = "-1000px";
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    try{ document.execCommand("copy"); done(); }catch(e){ toast("Select + copy manually"); }
+    document.body.removeChild(ta);
+  }
+}
+
+/* ───────────────────────────── voice ───────────────────────────── */
+var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+var rec = null, listening = false, keepGoing = true, finalText = "";
+
+if(!SR){ $("noSpeech").classList.remove("hidden"); }
+
+function startRec(){
+  if(!SR) return;
+  rec = new SR();
+  rec.lang = $("lang").value;
+  rec.continuous = true;
+  rec.interimResults = true;
+  rec.maxAlternatives = 1;
+
+  rec.onstart = function(){ listening = true; $("mic").classList.add("on"); $("micLbl").textContent = "Listening…  tap to stop"; };
+  rec.onresult = function(ev){
+    var interim = "";
+    for(var i = ev.resultIndex; i < ev.results.length; i++){
+      var r = ev.results[i];
+      if(r.isFinal){ finalText += r[0].transcript + " "; }
+      else { interim += r[0].transcript; }
+    }
+    $("live").textContent = interim ? "…" + interim : "";
+    $("text").value = (finalText + interim).replace(/\s+/g, " ").trimStart();
+    updateHint();
+  };
+  rec.onerror = function(ev){
+    if(ev.error === "not-allowed" || ev.error === "service-not-allowed"){
+      toast("Mic blocked — allow it in Settings → Safari");
+      listening = false;
+    }
+  };
+  rec.onend = function(){
+    $("live").textContent = "";
+    if(listening && keepGoing){ try{ rec.start(); return; }catch(e){} }
+    listening = false; $("mic").classList.remove("on"); $("micLbl").textContent = "Tap to talk";
+  };
+  try{ rec.start(); }catch(e){ setTimeout(function(){ try{ rec.start(); }catch(e2){} }, 250); }
+}
+
+$("mic").addEventListener("click", function(){
+  if(!SR){ $("text").focus(); return; }
+  if(listening){ listening = false; try{ rec.stop(); }catch(e){} }
+  else { finalText = ($("text").value ? $("text").value.replace(/\s+$/,"") + " " : ""); startRec(); }
+});
+$("keepGoing").addEventListener("change", function(){ keepGoing = this.checked; });
+
+/* ───────────────────────────── capture ───────────────────────────── */
+var ta = $("text");
+function updateHint(){
+  var v = ta.value.trim();
+  $("draftHint").textContent = v
+    ? (v.split(/\s+/).length + " words ready. Submit with the button or ⌘/Ctrl+Enter.")
+    : "Nothing typed yet. Submit with the button or ⌘/Ctrl+Enter.";
+  S.draft = ta.value; save();
+}
+ta.addEventListener("input", updateHint);
+ta.addEventListener("keydown", function(e){
+  if((e.metaKey || e.ctrlKey) && e.key === "Enter"){ e.preventDefault(); submit(); }
+});
+$("clearDraft").addEventListener("click", function(){ ta.value = ""; finalText = ""; updateHint(); ta.focus(); });
+
+function submit(){
+  var v = ta.value.replace(/\s+/g," ").trim();
+  if(!v){ toast("Nothing to submit"); return; }
+  S.thoughts.push({ id: Date.now() + "-" + Math.random().toString(36).slice(2,6), t: Date.now(), text: v });
+  save(); ta.value = ""; finalText = ""; updateHint(); renderCount(); renderList();
+  if(listening){ try{ rec.stop(); }catch(e){} listening = false; }
+  $("mic").classList.remove("on"); $("micLbl").textContent = "Tap to talk";
+  toast("Saved (" + S.thoughts.length + ")");
+  try{ navigator.vibrate && navigator.vibrate(12); }catch(e){}
+  ta.focus();
+}
+$("submit").addEventListener("click", submit);
+
+/* ───────────────────────────── list ───────────────────────────── */
+var editing = null;
+function renderCount(){ $("count").textContent = S.thoughts.length; }
+
+function renderList(){
+  var f = ($("q").value || "").toLowerCase().trim();
+  var rows = S.thoughts.map(function(x,i){ return {x:x, i:i}; })
+    .filter(function(o){ return !f || o.x.text.toLowerCase().indexOf(f) >= 0; });
+  $("listInfo").textContent = S.thoughts.length + " total" +
+    (f ? " · " + rows.length + " match" : " · " + S.archived.length + " archived");
+  var box = $("items");
+  box.innerHTML = "";
+  if(!rows.length){
+    box.innerHTML = '<div class="empty">' + (f ? "Nothing matches that." : "No thoughts yet. Go to Talk and start dumping.") + '</div>';
+    return;
+  }
+  rows.slice().reverse().forEach(function(o){
+    var d = document.createElement("div");
+    d.className = "item";
+    d.innerHTML =
+      '<div class="top"><span class="n">#' + (o.i + 1) + '</span><span>' + hhmm(o.x.t) + '</span>' +
+      '<span class="tag">' + o.x.text.split(/\s+/).length + 'w</span>' +
+      '<span class="acts">' +
+        '<button class="btn sm ghost" data-act="edit" data-i="' + o.i + '">edit</button>' +
+        '<button class="btn sm ghost" data-act="up" data-i="' + o.i + '">↑</button>' +
+        '<button class="btn sm bad" data-act="del" data-i="' + o.i + '">✕</button>' +
+      '</span></div><p>' + esc(o.x.text) + '</p>';
+    box.appendChild(d);
+  });
+}
+$("q").addEventListener("input", renderList);
+
+$("items").addEventListener("click", function(ev){
+  var b = ev.target.closest("button"); if(!b) return;
+  var i = +b.getAttribute("data-i"), act = b.getAttribute("data-act");
+  if(act === "del"){
+    if(!confirm("Delete thought #" + (i+1) + "?")) return;
+    S.thoughts.splice(i,1); save(); renderList(); renderCount(); toast("Deleted");
+  } else if(act === "up"){
+    if(i > 0){ var t = S.thoughts[i-1]; S.thoughts[i-1] = S.thoughts[i]; S.thoughts[i] = t; save(); renderList(); }
+  } else if(act === "edit"){
+    var cur = S.thoughts[i].text;
+    var next = prompt("Edit thought #" + (i+1), cur);
+    if(next !== null && next.trim()){ S.thoughts[i].text = next.trim(); save(); renderList(); toast("Updated"); }
+  }
+});
+
+$("archiveAll").addEventListener("click", function(){
+  if(!S.thoughts.length) return;
+  if(!confirm("Move all " + S.thoughts.length + " thoughts to the archive?")) return;
+  S.archived = S.archived.concat(S.thoughts); S.thoughts = []; save();
+  renderList(); renderCount(); toast("Archived");
+});
+$("wipe").addEventListener("click", function(){
+  if(!confirm("Delete EVERYTHING including the archive?")) return;
+  S = {v:1, thoughts:[], archived:[], name:"", draft:""}; save();
+  ta.value = ""; renderList(); renderCount(); build(); toast("Wiped");
+});
+$("export").addEventListener("click", function(){
+  var blob = new Blob([JSON.stringify(S, null, 2)], {type:"application/json"});
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "brainstormer-" + new Date().toISOString().slice(0,10) + ".json";
+  a.click(); toast("Exported");
+});
+$("import").addEventListener("click", function(){ $("importFile").click(); });
+$("importFile").addEventListener("change", function(ev){
+  var f = ev.target.files[0]; if(!f) return;
+  var r = new FileReader();
+  r.onload = function(){
+    try{
+      var d = JSON.parse(r.result);
+      if(!d.thoughts) throw new Error("no thoughts");
+      S.thoughts = S.thoughts.concat(d.thoughts.map(function(x){
+        return {id:x.id || String(Date.now()+Math.random()), t:x.t || Date.now(), text:x.text};
+      }));
+      if(d.archived) S.archived = S.archived.concat(d.archived);
+      save(); renderList(); renderCount(); toast("Imported " + d.thoughts.length);
+    }catch(e){ toast("Bad file"); }
+  };
+  r.readAsText(f);
+});
+
+/* ───────────────────────────── the organizer ───────────────────────────── */
+var STOP = ("a an the and or but so then than that this these those it its is are was were be been being " +
+  "to of in on at for with from into over under again more most very can could would should will shall may " +
+  "might must do does did done have has had having you your yours my me mine we our us they them he she his " +
+  "her not no yes if when while as by about like just really gonna wanna ok okay um uh well kinda " +
+  "sorta stuff thing things get got make makes made also there here what which who whom why how").split(" ");
+
+var words = function(s){
+  return String(s).toLowerCase().replace(/[^a-z0-9'\s]/g, " ").split(/\s+/).filter(function(w){ return w; });
+};
+
+/* fold near-synonyms so "make the copy button copy it" de-dupes against "add a button that copies it" */
+var FOLD = {};
+(function(){
+  var pairs = [
+    ["add", ["add","adds","make","makes","create","creates","build","builds","put","puts","insert",
+             "include","includes","enable","enables","allow","allows","let","support","supports",
+             "want","wants","need","needs","should","gonna","wanna"]],
+    ["copy", ["copy","copies","copied","duplicate"]],
+    ["save", ["save","saves","saved","store","stores","stored","persist","keeps","keep"]],
+    ["fix", ["fix","fixes","fixed","repair","solve"]],
+    ["show", ["show","shows","display","displays","see","seen","view"]],
+    ["button", ["button","buttons"]],
+    ["refresh", ["refresh","refreshes","reload","reloads","update","updates"]],
+    ["big", ["big","bigger","large","larger","huge","bold"]],
+    ["small", ["small","smaller","tiny","little"]],
+    ["balance", ["balance","credit","credits","quota"]]
+  ];
+  pairs.forEach(function(p){ p[1].forEach(function(w){ FOLD[w] = p[0]; }); });
+})();
+
+function sigWords(s){ return words(s).map(function(w){ return FOLD[w] || w; })
+  .filter(function(w){ return STOP.indexOf(w) < 0 && w.length > 2; }); }
+
+/* ── scoring classifier: specific buckets beat generic "feature" words ── */
+var RULES = [
+  ["priority", /\b(urgent|asap|most important|first thing|number one|top priority|critical)\b/g, 3,
+               /\b(priority|must[ -]have|important|first)\b/g, 1],
+  ["fix",      /\b(broken|broke|bug|buggy|crash|crashes|glitch|stuck|does ?n[o']?t work|not work|error|fails?)\b/g, 2,
+               /\b(fix|issue|problem|wrong)\b/g, 1],
+  ["rule",     /\b(must|never|always|have to|has to|make sure|do ?n[o']?t|don'?t|exactly|at least|no more than)\b/g, 2,
+               /\b(only|keep it|keep the|without|instead of|limit|cap|iphone|ipad|safari|ios|android|mobile|desktop|work on|all devices)\b/g, 1],
+  ["look",     /\b(colou?r|font|big|bigger|bold|dark mode|layout|aligned?|spacing|padding|icon|theme|rounded?)\b/g, 2,
+               /\b(small|smaller|green|blue|red|center|centre|style|looks?|size|position)\b/g, 1],
+  ["data",     /\b(database|storage|localstorage|sync|log ?in|login|account|api|endpoint|backend|server|export|import|offline|back ?up)\b/g, 2,
+               /\b(save|saves|saved|store|stored|persist)\b/g, 1],
+  ["words",    /\b(wording|prompt|prompts|title|called|named|spelling|grammar|caption|label|message|renamed?)\b/g, 2,
+               /\b(text|word|words|copy|name|description)\b/g, 1],
+  ["question", /\?\s*$|^(is it|is there|can you|can it|could you|would you|any way|any way to)\b/g, 2,
+               /^(how|what|why|when|who|which|does|do we|should we|will|would|is|are|any)\b/g, 1],
+  ["feature",  /\b(button|page|screen|tab|section|tool|option|setting|dropdown|menu|slider|toggle|search|filter|reminder|alert|gallery|list)\b/g, 2,
+               /\b(add|new|create|build|include|put|allow|let me|needs?|enable|support|should|refresh)\b/g, 1]
+];
+var TIE = ["priority","fix","rule","look","data","words","question","feature","idea"];
+var HEAD = {
+  priority:"★ Top priority", feature:"Features to build", fix:"Fixes", look:"Look & feel",
+  data:"Saving, data & accounts", words:"Words & content", rule:"Rules & constraints",
+  question:"Open questions", idea:"Ideas parked for later"
+};
+var ORDER = ["priority","feature","fix","look","data","words","rule","question","idea"];
+
+function hits(re, s){ var m = String(s).match(re); return m ? m.length : 0; }
+
+function classify(c){
+  var best = "idea", bestScore = 0;
+  RULES.forEach(function(r){
+    var score = hits(r[1], c) * r[2] + hits(r[3], c) * r[4];
+    if(score > bestScore){ bestScore = score; best = r[0]; }
+    else if(score === bestScore && score > 0 && TIE.indexOf(r[0]) < TIE.indexOf(best)){ best = r[0]; }
+  });
+  return best;
+}
+
+var DELEAD = /^(urgent|ok so|okay|ok|so|and|also|then|but|um+|uh+|yeah|like|right|well|basically|anyway)\b\s*[:,]?\s*/i;
+
+var ADJ = ("big bigger small smaller bold green blue red dark light fast slow quick wide narrow new old " +
+  "plain simple nice pretty").split(" ");
+var CONNS = ["and","or","but","so","then","also","plus","because"];
+var KEEP_ALONE = ["someday","later","eventually","urgent","asap","first","important","soon","now","today","tonight"];
+
+function splitConnectors(s){
+  var toks = s.split(/\s+/), groups = [], cur = [];
+  for(var i = 0; i < toks.length; i++){
+    var k = toks[i].toLowerCase().replace(/[^a-z]/g, "");
+    var rest = toks.slice(i + 1);
+    var next = (rest[0] || "").toLowerCase().replace(/[^a-z]/g, "");
+    var isConn = CONNS.indexOf(k) >= 0 && cur.length > 0 && rest.length >= 3;
+    if(isConn && (k === "and" || k === "or") && ADJ.indexOf(next) >= 0) isConn = false;  /* "big and bold" stays together */
+    if(isConn){
+      if(k === "and" && next === "then") i++;   /* "and then" = one connector */
+      groups.push(cur.join(" ")); cur = [];
+      continue;
+    }
+    cur.push(toks[i]);
+  }
+  if(cur.length) groups.push(cur.join(" "));
+  return groups;
+}
+
+function clausesFrom(text){
+  var raw = [];
+  String(text).split(/\n+/).forEach(function(chunk){
+    chunk.split(/(?<=[.?!])\s+/).forEach(function(sent){
+      sent.split(/\s*[,;]\s*/).forEach(function(part){
+        splitConnectors(part).forEach(function(c){ raw.push(c); });
+      });
+    });
+  });
+  var out = [];
+  raw.forEach(function(c){
+    c = c.replace(/^[\s,;:.\-–—]+/, "").replace(/[\s,;:.\-–—]+$/, "").replace(/\s+/g, " ").trim();
+    if(!c) return;
+    var w = words(c);
+    if(w.length >= 2){
+      if(!out.length || out[out.length - 1].toLowerCase() !== c.toLowerCase()) out.push(c);
+    } else if(w.length === 1 && KEEP_ALONE.indexOf(w[0]) >= 0 && out.length){
+      out[out.length - 1] += " " + c;
+    }
+  });
+  return out;
+}
+
+function overlapInfo(A, B){
+  var inter = 0;
+  Object.keys(A).forEach(function(k){ if(B[k]) inter++; });
+  var uni = Object.keys(A).length;
+  Object.keys(B).forEach(function(k){ if(!A[k]) uni++; });
+  var min = Math.min(Object.keys(A).length, Object.keys(B).length) || 1;
+  return { jac: inter / (uni || 1), contain: inter / min, inter: inter };
+}
+function toSet(s){ var o = {}; sigWords(s).forEach(function(w){ o[w] = 1; }); return o; }
+
+function mergeInto(list, c){
+  var v = toSet(c);
+  if(!Object.keys(v).length) return false;
+  for(var i = 0; i < list.length; i++){
+    var info = overlapInfo(list[i].set, v);
+    if(info.jac >= 0.7 || (info.inter >= 2 && info.contain >= 0.85)){
+      list[i].count++;
+      if(c.length > list[i].text.length) list[i].text = c;   /* keep the richer wording */
+      return true;
+    }
+  }
+  return false;
+}
+
+function tidy(c){
+  c = String(c).trim().replace(/\s+/g, " ").replace(DELEAD, "").trim();
+  c = c.charAt(0).toUpperCase() + c.slice(1);
+  if(!/[.?!]$/.test(c)) c += ".";
+  return c;
+}
+function plain(c){
+  c = String(c).trim().replace(/\s+/g, " ").replace(DELEAD, "").trim();
+  return c.charAt(0).toUpperCase() + c.slice(1);
+}
+
+function buildPlan(){
+  var all = S.thoughts.concat(S.archived);
+  var clusters = [], totalWords = 0;
+
+  all.forEach(function(th){
+    clausesFrom(th.text).forEach(function(c){
+      totalWords += words(c).length;
+      if(!mergeInto(clusters, c)){
+        clusters.push({ text: c, count: 1, set: toSet(c.replace(DELEAD, "")), bucket: classify(c) });
+      }
+    });
+  });
+  if(!clusters.length) return null;
+
+  var groups = {};
+  clusters.forEach(function(cl){
+    var b = cl.bucket || "idea";
+    (groups[b] = groups[b] || []).push(cl);
+  });
+
+  /* project name: what he typed, else "called X" in his words, else the most repeated term */
+  var name = (S.name || "").trim();
+  if(!name){
+    var m = null;
+    clusters.some(function(cl){
+      m = cl.text.match(/\b(?:called|named)\s+([A-Za-z0-9][\w\-]*(?:\s+[A-Za-z0-9][\w\-]*)?)/i) ||
+          cl.text.match(/\b(?:app|project|site)\s+(?:is|will be|should be)\s+([A-Za-z0-9][\w\-]*(?:\s+[A-Za-z0-9][\w\-]*)?)/i);
+      return !!m;
+    });
+    if(m){ name = m[1].replace(/\b(the|a|an)\b/gi, "").trim(); }
+    else {
+      var freq = {};
+      clusters.forEach(function(cl){ sigWords(cl.text).forEach(function(w){ freq[w] = (freq[w] || 0) + 1; }); });
+      var top = Object.keys(freq).sort(function(a, b){ return freq[b] - freq[a]; })[0] || "Plan";
+      name = top.replace(/^\w/, function(ch){ return ch.toUpperCase(); });
+    }
+  }
+
+  var prio = groups.priority || [], rules = groups.rule || [], qs = groups.question || [];
+  var L = [];
+  L.push("# " + name + " — build plan");
+  L.push("");
+  L.push("_Compiled from " + all.length + " spoken thought(s) → " + clusters.length +
+         " distinct points after de-duping. " + totalWords + " words of input._");
+  L.push("");
+  L.push("## What this is");
+  var tldr = prio.concat(groups.feature || []).slice(0, 3);
+  if(!tldr.length) tldr = [clusters[0]];
+  tldr.forEach(function(cl){ L.push("- " + plain(cl.text) + "."); });
+  L.push("");
+
+  L.push("## Requirements");
+  var n = 0;
+  ORDER.forEach(function(g){
+    if(g === "rule" || g === "question" || g === "idea") return;
+    var list = groups[g] || [];
+    if(!list.length) return;
+    L.push("");
+    L.push("### " + HEAD[g]);
+    list.forEach(function(cl){
+      n++;
+      L.push(n + ". " + tidy(cl.text) + (cl.count > 1 ? "  _(said " + cl.count + "×)_" : ""));
+    });
+  });
+  L.push("");
+  L.push("## Rules & constraints");
+  (rules.length ? rules : [{ text: "Anything not listed is a judgement call — keep it simple" }]).forEach(function(cl){
+    L.push("- " + tidy(cl.text));
+  });
+  L.push("");
+  L.push("## Acceptance criteria");
+  var accSeen = {};
+  rules.concat(prio).concat((groups.feature || []).slice(0, 5)).forEach(function(cl){
+    var k = cl.text.toLowerCase();
+    if(accSeen[k]) return;
+    accSeen[k] = 1;
+    L.push("- [ ] " + plain(cl.text).replace(/\.$/, ""));
+  });
+  if(qs.length){
+    L.push("");
+    L.push("## Open questions");
+    qs.forEach(function(cl){ L.push("- " + tidy(cl.text) + "  → choose the simplest answer and say what you chose."); });
+  }
+  if((groups.idea || []).length){
+    L.push("");
+    L.push("## Ideas parked (nice to have, not blocking)");
+    groups.idea.forEach(function(cl){ L.push("- " + tidy(cl.text)); });
+  }
+  L.push("");
+  L.push("---");
+  L.push("");
+  L.push("## Verbatim notes (nothing thrown away)");
+  all.forEach(function(th){
+    L.push("");
+    L.push("**" + hhmm(th.t) + "** — " + String(th.text).replace(/\s+/g, " ").trim());
+  });
+  return { md: L.join("\n"), points: clusters.length, words: totalWords,
+           groups: Object.keys(groups).length, name: name };
+}
+
+function agentPrompt(md, name){
+  return "Build exactly this. Do not add features that are not listed, and do not skip anything.\n" +
+    "If something is ambiguous, take the simplest reading, do it, and note the choice.\n" +
+    "It has to work on an iPhone (Safari) first. Keep it in one self-contained file unless the spec says otherwise.\n\n" +
+    "=== TASK: " + (name || "the app in the spec") + " ===\n\n" + md + "\n\n" +
+    "=== WHEN YOU'RE DONE ===\n" +
+    "1. Confirm every requirement above with one short line of proof.\n" +
+    "2. List anything you interpreted differently or had to guess.\n" +
+    "3. Say what you'd do next, but don't do it yet.\n";
+}
+
+/* ───────────────────────────── plan view ───────────────────────────── */
+var current = null;
+function renderMd(md){
+  var lines = md.split("\n"), out = [], inList = false;
+  function closeList(){ if(inList){ out.push("</ul>"); inList = false; } }
+  lines.forEach(function(ln){
+    if(/^#\s/.test(ln)){ closeList(); out.push("<h1>" + esc(ln.slice(2)) + "</h1>"); return; }
+    if(/^##\s/.test(ln)){ closeList(); out.push("<h2>" + esc(ln.slice(3)) + "</h2>"); return; }
+    if(/^###\s/.test(ln)){ closeList(); out.push("<h3>" + esc(ln.slice(4)) + "</h3>"); return; }
+    if(/^---$/.test(ln)){ closeList(); out.push("<hr>"); return; }
+    if(/^- \[ \]\s/.test(ln)){ closeList(); out.push('<li class="chk">☐ ' + inline(ln.slice(6)) + "</li>"); return; }
+    if(/^[-*]\s/.test(ln)){ if(!inList){ out.push("<ul>"); inList = true; } out.push("<li>" + inline(ln.slice(2)) + "</li>"); return; }
+    if(/^\d+\.\s/.test(ln)){ closeList(); out.push("<p>" + inline(ln.replace(/^(\d+)\.\s/, "$1. ")) + "</p>"); return; }
+    closeList();
+    if(ln.trim()) out.push("<p>" + inline(ln) + "</p>");
+  });
+  closeList();
+  function inline(s){
+    return esc(s)
+      .replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>")
+      .replace(/_([^_]+)_/g, "<i>$1</i>")
+      .replace(/`([^`]+)`/g, "<code>$1</code>");
+  }
+  return out.join("");
+}
+function build(){
+  S.name = $("projName").value; save();
+  var p = buildPlan();
+  if(!p){
+    $("planCard").classList.add("hidden"); $("planEmpty").classList.remove("hidden");
+    toast("Nothing to plan yet"); return;
+  }
+  if(!S.name) $("projName").value = p.name;
+  current = p;
+  $("planEmpty").classList.add("hidden"); $("planCard").classList.remove("hidden");
+  $("planOut").innerHTML = renderMd(p.md);
+  $("planPlain").value = p.md;
+  $("planStats").textContent = p.points + " distinct points · " + p.md.split(/\s+/).length +
+    " words of spec · " + p.groups + " sections · packed from " + S.thoughts.length + " thought(s).";
+  toast("Plan built");
+}
+$("build").addEventListener("click", build);
+$("goBuild").addEventListener("click", function(){ show("plan"); build(); });
+$("copyPlan").addEventListener("click", function(){ if(current) copy(current.md, "Plan copied"); });
+$("copyRaw").addEventListener("click", function(){
+  var t = S.thoughts.concat(S.archived).map(function(x){ return "- " + x.text; }).join("\n");
+  copy(t, t ? "Raw thoughts copied" : "Nothing yet");
+});
+$("copyAgent").addEventListener("click", function(){
+  if(current) copy(agentPrompt(current.md, S.name || ""), "Agent prompt copied — paste it in");
+});
+$("download").addEventListener("click", function(){
+  if(!current) return;
+  var blob = new Blob([current.md], {type:"text/markdown"});
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = (S.name || "plan").replace(/\s+/g,"-").toLowerCase() + ".md";
+  a.click(); toast("Downloaded");
+});
+document.querySelectorAll(".seg button").forEach(function(b){
+  b.addEventListener("click", function(){
+    document.querySelectorAll(".seg button").forEach(function(x){ x.classList.remove("on"); });
+    b.classList.add("on");
+    var plain = b.getAttribute("data-fmt") === "plain";
+    $("planOut").classList.toggle("hidden", plain);
+    $("planPlain").classList.toggle("hidden", !plain);
+    if(plain) $("planPlain").value = current ? current.md : "";
+  });
+});
+
+/* ───────────────────────────── views ───────────────────────────── */
+function show(v){
+  document.querySelectorAll(".tab").forEach(function(t){ t.classList.toggle("on", t.getAttribute("data-view") === v); });
+  ["capture","list","plan"].forEach(function(k){ $("v-" + k).classList.toggle("hidden", k !== v); });
+  window.scrollTo(0,0);
+}
+document.querySelectorAll(".tab").forEach(function(t){
+  t.addEventListener("click", function(){ show(t.getAttribute("data-view")); });
+});
+
+/* ───────────────────────────── boot ───────────────────────────── */
+ta.value = S.draft || "";
+$("projName").value = S.name || "";
+$("projName").addEventListener("change", function(){ S.name = this.value; save(); });
+if(S.thoughts.length + S.archived.length) setTimeout(build, 120);
+renderCount(); renderList(); updateHint();
+})();
+</script>
+</body>
+</html>
