@@ -10,7 +10,9 @@ whole pile of random thoughts into ONE organized build plan you can paste straig
 1. **🎙 Talk** — tap the mic, speak, tap again to stop. Tap **Submit thought**. Repeat all day.
    (No speech engine in the browser? Tap the box and use the mic key on your iPhone keyboard.)
 2. **📋 Thoughts** — every submission is listed with a time stamp. Edit, reorder, delete, search,
-   export/import JSON. Everything lives in `localStorage` on the phone — nothing is uploaded.
+   export/import JSON. Every thought has a **🔊 read back** button: one tap reads *that* thought
+   aloud in your chosen language, the row lights up while it talks, tap again to stop. No more
+   select-all-then-hit-Speak. Everything lives in `localStorage` on the phone — nothing is uploaded.
 3. **🧩 Plan** — press **Build plan**. It splits your rambling into separate points, throws out the
    repeats, sorts each point into top priority / features / fixes / look and feel / data / words /
    rules / open questions, pulls out the must-haves and an acceptance-criteria checklist, and writes

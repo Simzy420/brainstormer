@@ -340,6 +340,7 @@ function readThought(i, txt){
   if(!body) return;
   if(!canSpeak()){ toast("No read-aloud in this browser — use your phone's Speak button"); return; }
   if(speakingI === i && window.speechSynthesis.speaking){ stopRead(); return; }   /* tap again = stop */
+  var wasSpeaking = window.speechSynthesis.speaking;
   stopRead();
   var u = new SpeechSynthesisUtterance(body);
   u.lang = ($("lang") && $("lang").value) || "en-US";
@@ -347,8 +348,11 @@ function readThought(i, txt){
   u.onend = u.onerror = function(){ if(speakingI === i){ speakingI = null; markSpeaking(); } };
   speakingI = i;
   markSpeaking();
-  window.speechSynthesis.speak(u);
-  try{ window.speechSynthesis.resume(); }catch(e){}   /* iOS stays paused otherwise */
+  var fire = function(){
+    try{ window.speechSynthesis.speak(u); window.speechSynthesis.resume(); }catch(e){}
+  };
+  /* iOS Safari swallows speak() if it happens in the same tick as cancel() */
+  if(wasSpeaking) setTimeout(fire, 80); else fire();
 }
 
 function renderList(){
