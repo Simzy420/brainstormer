@@ -63,6 +63,9 @@
   .item .n{color:var(--acc); font-weight:800}
   .item .acts{margin-left:auto; display:flex; gap:6px}
   .item p{margin:0; white-space:pre-wrap; word-break:break-word}
+  .item.speaking{border-color:var(--acc); background:#0c141d; box-shadow:0 0 0 1px rgba(94,234,212,.45)}
+  .item.speaking .read{color:var(--acc); border-color:var(--acc)}
+  .item .read{white-space:nowrap}
   .tag{font-size:11px; border:1px solid var(--line); color:var(--dim); border-radius:999px; padding:2px 8px}
   .plan{background:#0a0e15; border:1px solid var(--line); border-radius:12px; padding:14px;
         white-space:pre-wrap; word-break:break-word; font:14px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace}
@@ -319,6 +322,35 @@ $("submit").addEventListener("click", submit);
 var editing = null;
 function renderCount(){ $("count").textContent = S.thoughts.length; }
 
+/* ───────────────────────── read back (per thought, one tap) ───────────────────────── */
+var speakingI = null;
+function canSpeak(){ return typeof window.speechSynthesis !== "undefined" &&
+                            typeof window.SpeechSynthesisUtterance !== "undefined"; }
+function markSpeaking(){
+  [].forEach.call(document.querySelectorAll("#items .item"), function(el){
+    el.classList.toggle("speaking", +el.getAttribute("data-i") === speakingI);
+  });
+}
+function stopRead(){
+  try{ window.speechSynthesis.cancel(); }catch(e){}
+  if(speakingI !== null){ speakingI = null; markSpeaking(); }
+}
+function readThought(i, txt){
+  var body = (txt != null ? txt : (S.thoughts[i] ? S.thoughts[i].text : "")).trim();
+  if(!body) return;
+  if(!canSpeak()){ toast("No read-aloud in this browser — use your phone's Speak button"); return; }
+  if(speakingI === i && window.speechSynthesis.speaking){ stopRead(); return; }   /* tap again = stop */
+  stopRead();
+  var u = new SpeechSynthesisUtterance(body);
+  u.lang = ($("lang") && $("lang").value) || "en-US";
+  u.rate = 1;
+  u.onend = u.onerror = function(){ if(speakingI === i){ speakingI = null; markSpeaking(); } };
+  speakingI = i;
+  markSpeaking();
+  window.speechSynthesis.speak(u);
+  try{ window.speechSynthesis.resume(); }catch(e){}   /* iOS stays paused otherwise */
+}
+
 function renderList(){
   var f = ($("q").value || "").toLowerCase().trim();
   var rows = S.thoughts.map(function(x,i){ return {x:x, i:i}; })
@@ -334,23 +366,28 @@ function renderList(){
   rows.slice().reverse().forEach(function(o){
     var d = document.createElement("div");
     d.className = "item";
+    d.setAttribute("data-i", o.i);
     d.innerHTML =
       '<div class="top"><span class="n">#' + (o.i + 1) + '</span><span>' + hhmm(o.x.t) + '</span>' +
       '<span class="tag">' + o.x.text.split(/\s+/).length + 'w</span>' +
       '<span class="acts">' +
+        '<button class="btn sm ghost read" data-act="read" data-i="' + o.i + '" title="Read this thought aloud" aria-label="Read this thought aloud">🔊 read back</button>' +
         '<button class="btn sm ghost" data-act="edit" data-i="' + o.i + '">edit</button>' +
         '<button class="btn sm ghost" data-act="up" data-i="' + o.i + '">↑</button>' +
         '<button class="btn sm bad" data-act="del" data-i="' + o.i + '">✕</button>' +
       '</span></div><p>' + esc(o.x.text) + '</p>';
     box.appendChild(d);
   });
+  markSpeaking();
 }
 $("q").addEventListener("input", renderList);
 
 $("items").addEventListener("click", function(ev){
   var b = ev.target.closest("button"); if(!b) return;
   var i = +b.getAttribute("data-i"), act = b.getAttribute("data-act");
-  if(act === "del"){
+  if(act === "read"){
+    readThought(i);
+  } else if(act === "del"){
     if(!confirm("Delete thought #" + (i+1) + "?")) return;
     S.thoughts.splice(i,1); save(); renderList(); renderCount(); toast("Deleted");
   } else if(act === "up"){
