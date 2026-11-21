@@ -434,7 +434,7 @@ function sigWords(s){ return words(s).map(function(w){ return FOLD[w] || w; })
 
 /* ── scoring classifier: specific buckets beat generic "feature" words ── */
 var RULES = [
-  ["priority", /\b(urgent|asap|most important|first thing|number one|top priority|critical)\b/g, 3,
+  ["priority", /\b(urgent|asap|most important|first thing|number one|top priority|critical)\b/g, 5,
                /\b(priority|must[ -]have|important|first)\b/g, 1],
   ["fix",      /\b(broken|broke|bug|buggy|crash|crashes|glitch|stuck|does ?n[o']?t work|not work|error|fails?)\b/g, 2,
                /\b(fix|issue|problem|wrong)\b/g, 1],
@@ -512,7 +512,9 @@ function clausesFrom(text){
     if(!c) return;
     var w = words(c);
     if(w.length >= 2){
-      if(!out.length || out[out.length - 1].toLowerCase() !== c.toLowerCase()) out.push(c);
+      if(/^(not|instead|rather|except)\b/i.test(c) && out.length){
+        out[out.length - 1] += ", " + c;            /* "say find food, not search restaurants" stays one point */
+      } else if(!out.length || out[out.length - 1].toLowerCase() !== c.toLowerCase()) out.push(c);
     } else if(w.length === 1 && KEEP_ALONE.indexOf(w[0]) >= 0 && out.length){
       out[out.length - 1] += " " + c;
     }
